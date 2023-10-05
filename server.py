@@ -1,6 +1,7 @@
 from flask import Flask, render_template, request
 from weather import getCurrentWeather
 from waitress import serve
+from pprint import pprint
 
 app = Flask(__name__)
 
@@ -13,27 +14,13 @@ def index():
 
 @app.route('/weather')
 def getWeather():
-    city = request.args.get('city')
+    city = request.args.get('city').strip()
     weather_data = getCurrentWeather(city)
+    print(f"\n\n ********* Successful Return ********* \n\n")
 
-    if weather_data['cod'] == "404":
-        code = weather_data['cod']
-        message = weather_data['message']
-        # submission = request.args.get('city')
-        # submission = city
+    pprint(weather_data)
 
-        print(
-            f"\n\n ********* Error {code} :\nMessage: {message} ********* \n\n")
-
-        return render_template(
-            "error.html",
-            code=weather_data['cod'],
-            message=weather_data['message'],
-            submission=city
-        )
-
-    else:
-
+    if weather_data['cod'] == 200:
         return render_template(
             "weather.html",
             title=weather_data['name'].title(),
@@ -44,15 +31,42 @@ def getWeather():
             feels_like=f"{weather_data['main']['feels_like']:.1f}"
         )
 
+    elif weather_data['cod'] == "404":
 
-# @app.route('/error')
-# def getWeather():
-#     city = request.args.get('city')
-#     weather_data = getCurrentWeather(city)
-#     return render_template(
-#         "error.html",
-#         submission=request.args.get('city')
-#     )
+        print(
+            f"\n\n ********* Error {weather_data['cod']} :\nMessage: {weather_data['message']} ********* \n\n")
+
+        return render_template(
+            "error.html",
+            code=weather_data['cod'],
+            errorMessage=weather_data['message'],
+            errorInfo=f"We cannot find the submitted city: '{city}'."
+        )
+    elif weather_data['cod'] == "400":
+        code = weather_data['cod']
+
+        print(
+            f"\n\n ********* Error {weather_data['cod']} :\nMessage: {weather_data['message']} ********* \n\n")
+
+        return render_template(
+            "error.html",
+            code=weather_data['cod'],
+            errorMessage=weather_data['message'],
+            errorInfo=f"Please enter a city, not blank spaces."
+        )
+
+    else:
+
+        print(
+            f"\n\n ********* Error ********* \n\n")
+        pprint(weather_data)
+
+        return render_template(
+            "error.html",
+            code=weather_data['cod'],
+            errorMessage=weather_data['message'],
+            errorInfo=f"Unknown Error."
+        )
 
 
 # tells it to run on localhost:8000
